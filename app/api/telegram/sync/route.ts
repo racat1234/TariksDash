@@ -150,7 +150,7 @@ function parseLine(line: string) {
 function naturalActivity(text: string): Pending | null {
   const range = text.match(
     /\b(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))\s*(?:-|–|to|until)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i,
-  );
+  ) || text.match(/\b(?:at|around)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i);
   if (!range) return null;
   const lower = text.toLowerCase();
   let date: string | undefined;
@@ -164,7 +164,7 @@ function naturalActivity(text: string): Pending | null {
   const value = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((part) => part.type === type)?.value || '';
   const today = new Date(`${value('year')}-${value('month')}-${value('day')}T12:00:00-04:00`);
-  if (/\btoday\b/.test(lower)) date = `${value('year')}-${value('month')}-${value('day')}`;
+  if (/\b(today|tonight|this evening)\b/.test(lower)) date = `${value('year')}-${value('month')}-${value('day')}`;
   else if (/\btomorrow\b/.test(lower)) {
     today.setDate(today.getDate() + 1);
     date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -174,11 +174,12 @@ function naturalActivity(text: string): Pending | null {
   if (!date && !day) return null;
   const title = text
     .replace(range[0], '')
+    .replace(/\b(tonight|this evening)\b/gi, '')
     .replace(/\b(today|tomorrow|next\s+)?(sun(day)?|mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/[,.]+$/, '');
-  return normalize({ title, date, day, start: range[1], end: range[2] });
+  return normalize({ title, date, day, start: range[1], end: range[2] || '' });
 }
 async function telegram(
   token: string,
@@ -411,6 +412,18 @@ export async function POST() {
       continue;
     }
     if (!text || text.startsWith('/')) continue;
+    const clearActivity = naturalActivity(text);
+    if (clearActivity) {
+      activityValues.push({
+        title: clearActivity.title,
+        startAt: new Date(clearActivity.startAt),
+        endAt: new Date(clearActivity.endAt),
+        source: 'telegram-parser',
+        externalId: `telegram-parser:${update.update_id}`,
+      });
+      await reply(token, chat, 'Added 1 after-school activity ✅');
+      continue;
+    }
     try {
       const items = await interpretText(text);
       let addedTasks = 0;
