@@ -29,7 +29,7 @@ export default function Home() {
           <div className="mt-3"><DailyGreeting /></div>
         </section>
 
-        <div className="dashboard-grid mx-auto max-w-4xl space-y-6">
+        <div className="dashboard-grid mx-auto max-w-4xl">
           <ClassSchedule />
           <WeeklyActivities />
           <div data-dashboard-section="weather"><WeatherCard /></div>
