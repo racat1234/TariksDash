@@ -8,11 +8,16 @@ import { DailyGreeting } from '@/components/daily-greeting';
 import { NewsCard } from '@/components/news-card';
 import { ClassSchedule } from '@/components/class-schedule';
 import { WeeklyActivities } from '@/components/weekly-activities';
+import { MusicWidget } from '@/components/music-widget';
+import { MarketsCard } from '@/components/markets-card';
+import { BreakingNewsBanner } from '@/components/breaking-news-banner';
+import { DashboardMaintenance } from '@/components/dashboard-maintenance';
 
 export default function Home() {
   return (
     <main className="dashboard-scene min-h-screen overflow-hidden bg-background text-foreground">
       <BackgroundSwitcher />
+      <DashboardMaintenance />
       <div className="ambient-orb ambient-orb-one" aria-hidden="true" />
       <div className="ambient-orb ambient-orb-two" aria-hidden="true" />
       <div className="dashboard-shell relative mx-auto min-h-screen max-w-6xl px-5 pb-16 pt-6 sm:px-8 lg:px-12">
@@ -35,10 +40,13 @@ export default function Home() {
           <div data-dashboard-section="weather"><WeatherCard /></div>
           <div data-dashboard-section="sleep"><SleepCard /></div>
           <div data-dashboard-section="tasks"><TodoList /></div>
+          <MusicWidget />
+          <MarketsCard />
           <div data-dashboard-section="news"><NewsCard /></div>
         </div>
         <footer className="pb-2 pt-12 text-center text-[11px] text-muted-foreground/70">This website was made with lots of love from Tarik.</footer>
       </div>
+      <BreakingNewsBanner />
     </main>
   );
 }
