@@ -4,8 +4,8 @@ import { database, ensureDatabase } from '@/lib/db';
 
 export async function GET() {
   await ensureDatabase();
-  const [sleep] = await database().select().from(sleepRecords).orderBy(desc(sleepRecords.endAt)).limit(1);
-  return Response.json({ sleep: sleep || null });
+  const records = await database().select().from(sleepRecords).orderBy(desc(sleepRecords.endAt)).limit(2);
+  return Response.json({ sleep: records[0] || null, previousSleep: records[1] || null });
 }
 
 export async function POST(request: Request) {
