@@ -1,0 +1,17 @@
+'use client';
+
+import { BedDouble, Loader2, MoonStar } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+type Sleep = { sleepDate: string; startAt: string; endAt: string; totalMinutes: number; awakeMinutes: number | null; remMinutes: number | null; coreMinutes: number | null; deepMinutes: number | null; receivedAt: string };
+const duration = (minutes: number) => `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+
+export function SleepCard() {
+  const [sleep, setSleep] = useState<Sleep | null>(null);
+  const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => { try { const response = await fetch('/api/sleep'); if (response.ok) setSleep((await response.json()).sleep); } finally { setLoading(false); } }, []);
+  useEffect(() => { void load(); const refresh = () => { if (document.visibilityState === 'visible') void load(); }; const timer = window.setInterval(refresh, 60_000); window.addEventListener('focus', refresh); return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh); }; }, [load]);
+  const stages = sleep ? [{ label: 'Deep', value: sleep.deepMinutes, color: 'bg-indigo-400' }, { label: 'Core', value: sleep.coreMinutes, color: 'bg-sky-400' }, { label: 'REM', value: sleep.remMinutes, color: 'bg-violet-400' }, { label: 'Awake', value: sleep.awakeMinutes, color: 'bg-amber-300' }].filter((item) => item.value !== null) : [];
+  const stageTotal = stages.reduce((sum, item) => sum + (item.value || 0), 0);
+  return <section className="dashboard-card overflow-hidden"><div className="border-b border-border/70 px-5 py-4 sm:px-6"><div className="flex items-center gap-3"><div className="grid size-9 place-items-center rounded-xl bg-indigo-400/10 text-indigo-300"><MoonStar className="size-4" /></div><div><p className="eyebrow">Apple Health</p><h2 className="mt-0.5 font-semibold tracking-tight">Last night’s sleep</h2></div></div></div>{loading ? <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Loading sleep</div> : !sleep ? <div className="px-6 py-10 text-center"><BedDouble className="mx-auto size-8 text-indigo-300/60" /><p className="mt-3 font-medium">Ready for your first sleep summary.</p><p className="mx-auto mt-1 max-w-md text-sm leading-6 text-muted-foreground">Once the iPhone Shortcut is connected, last night’s sleep will appear here automatically.</p></div> : <div className="p-5 sm:p-6"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div className="text-4xl font-semibold tracking-[-.04em]">{duration(sleep.totalMinutes)}</div><div className="rounded-xl border border-indigo-400/15 bg-indigo-400/8 px-4 py-3 text-xs text-indigo-200">Synced automatically</div></div>{stages.length > 0 && <div className="mt-6"><div className="flex h-2.5 overflow-hidden rounded-full bg-secondary">{stages.map((stage) => <div key={stage.label} className={stage.color} style={{ width: `${((stage.value || 0) / stageTotal) * 100}%` }} />)}</div><div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">{stages.map((stage) => <span key={stage.label} className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><span className={`size-2 rounded-full ${stage.color}`} />{stage.label} {duration(stage.value || 0)}</span>)}</div></div>}</div>}</section>;
+}

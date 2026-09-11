@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789065207837,
+      "tag": "0000_violet_warpath",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789065226251,
+      "tag": "0001_closed_the_renegades",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789077238076,
+      "tag": "0002_dear_darkhawk",
+      "breakpoints": true
+    }
+  ]
+}

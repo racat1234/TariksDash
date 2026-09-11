@@ -1,0 +1,1 @@
+CREATE INDEX `idx_tasks_completed_created_at` ON `tasks` (`completed`,`created_at`);
