@@ -531,6 +531,7 @@ export async function POST() {
     .values({ key: 'telegram_sync_lock', value: '0' })
     .onConflictDoUpdate({ target: syncState.key, set: { value: '0' } });
   return Response.json({
+    parserVersion: 3,
     configured: true,
     aiConfigured: workersAiConfigured || Boolean(key),
     imported: taskValues.length,
