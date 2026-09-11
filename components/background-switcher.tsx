@@ -11,7 +11,6 @@ import {
   ListTodo,
   MessageCircle,
   MoonStar,
-  Music2,
   Newspaper,
   RotateCcw,
   Settings,
@@ -92,12 +91,6 @@ const sectionOptions = [
     label: 'Tasks',
     detail: 'Your personal to-do list',
     Icon: ListTodo,
-  },
-  {
-    id: 'music',
-    label: 'Apple Music',
-    detail: 'Now playing and artwork',
-    Icon: Music2,
   },
   {
     id: 'markets',
@@ -588,6 +581,10 @@ export function BackgroundSwitcher() {
                 <strong>Fullscreen kiosk</strong>
                 <small>Edge-to-edge dashboard view</small>
               </span>
+            </button>
+            <button onClick={() => window.dispatchEvent(new Event('dashboard:preview-breaking'))} className="settings-option">
+              <span>Preview breaking-news ticker</span>
+              <span className="settings-option-hint">Test</span>
             </button>
             <div className="mx-2 my-2 border-t border-white/10" />
             <div className="px-2 pb-1 pt-1 text-[9px] font-bold uppercase tracking-[.16em] text-white/35">
