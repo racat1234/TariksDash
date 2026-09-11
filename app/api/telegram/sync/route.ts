@@ -261,7 +261,7 @@ function confirmation(items: Pending[], note?: string) {
   });
   return `I found:\n${items.map((item) => `• ${item.title} — ${date.format(new Date(item.startAt))}, ${time.format(new Date(item.startAt))}–${time.format(new Date(item.endAt))}${item.estimatedEnd ? ' (estimated end)' : ''}`).join('\n')}${note ? `\n\nNote: ${note}` : ''}\n\nReply YES to add these to your dashboard, or NO to cancel.`;
 }
-async function interpretText(apiKey: string, text: string) {
+async function interpretText(text: string) {
   const today = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Detroit',
     year: 'numeric',
@@ -271,75 +271,32 @@ async function interpretText(apiKey: string, text: string) {
   }).format(new Date());
   const prompt = `You sort Tarik's natural Telegram messages for his personal dashboard. Today in America/Detroit is ${today}. Return each requested item as either "activity" or "todo". An activity is a scheduled after-school/personal event such as practice, tutoring, a game, appointment, meeting, or outing with a date and start time. Homework, chores, reminders, and things to finish are todos. Resolve relative dates such as today, tomorrow, Friday, or next Monday to YYYY-MM-DD. For activities, preserve the start and end times. If no end is stated, leave end blank. If a message sounds like an event but has no usable date or start time, classify it as a todo so it is not lost. Clean up spelling without changing meaning. Message: ${JSON.stringify(text)}. Return JSON only: {"items":[{"kind":"activity","title":"Football practice","date":"2026-09-14","start":"3:15 PM","end":"4:30 PM"},{"kind":"todo","title":"Finish chemistry worksheet","start":""}]}.`;
   const workersAi = (env as unknown as { AI?: { run: (model: string, input: unknown) => Promise<unknown> } }).AI;
-  if (workersAi) {
-    try {
-      const result = await workersAi.run('@cf/meta/llama-3.1-8b-instruct', {
-        messages: [
-          { role: 'system', content: 'Return valid JSON only. Do not use markdown fences.' },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0,
-        max_tokens: 700,
-      });
-      const output = typeof result === 'string'
-        ? result
-        : (result as { response?: string }).response || '';
-      const parsed = JSON.parse(output.replace(/^```json\s*|```$/g, '').trim()) as { items?: AiTextItem[] };
-      if (Array.isArray(parsed.items)) return parsed.items;
-    } catch {
-      // Fall through to Gemini, then to the deterministic to-do fallback.
-    }
-  }
-  let response: Response | null = null;
-  for (const model of ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite']) {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0,
-        },
-      }),
-      },
-    );
-    if (response.ok || response.status === 401 || response.status === 403) break;
-  }
-  if (!response?.ok) {
-    if (response.status === 401 || response.status === 403)
-      throw new PhotoReadError('key');
-    if (response.status === 429) throw new PhotoReadError('quota');
-    throw new PhotoReadError('gemini');
-  }
-  const payload = (await response.json()) as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-  try {
-    return (
-      (
-        JSON.parse(
-          payload.candidates?.[0]?.content?.parts
-            ?.map((part) => part.text || '')
-            .join('') || '{}',
-        ) as { items?: AiTextItem[] }
-      ).items || []
-    );
-  } catch {
-    throw new PhotoReadError('format');
-  }
+  if (!workersAi) throw new Error('Workers AI binding is unavailable');
+  const result = await workersAi.run('@cf/meta/llama-3.1-8b-instruct', {
+    messages: [
+      { role: 'system', content: 'Return valid JSON only. Do not use markdown fences.' },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0,
+    max_tokens: 700,
+  });
+  const output = typeof result === 'string'
+    ? result
+    : (result as { response?: string }).response || '';
+  const parsed = JSON.parse(output.replace(/^```(?:json)?\s*|```$/g, '').trim()) as { items?: AiTextItem[] };
+  if (!Array.isArray(parsed.items)) throw new Error('Workers AI returned invalid data');
+  return parsed.items;
 }
 
 export async function POST() {
   const token = String(env.TELEGRAM_BOT_TOKEN || '');
   const chat = String(env.TELEGRAM_CHAT_ID || '');
   const key = String(env.GEMINI_API_KEY || '');
+  const workersAiConfigured = Boolean((env as unknown as { AI?: unknown }).AI);
   if (!token || !chat)
     return Response.json({
       configured: false,
-      aiConfigured: Boolean(key),
+      aiConfigured: workersAiConfigured || Boolean(key),
       imported: 0,
       activitiesImported: 0,
     });
@@ -354,7 +311,7 @@ export async function POST() {
   if (!lock)
     return Response.json({
       configured: true,
-      aiConfigured: Boolean(key),
+      aiConfigured: workersAiConfigured || Boolean(key),
       busy: true,
       imported: 0,
       activitiesImported: 0,
@@ -418,17 +375,8 @@ export async function POST() {
       continue;
     }
     if (!text || text.startsWith('/')) continue;
-    if (!key) {
-      taskValues.push({
-        title: text.slice(0, 500),
-        source: 'telegram',
-        externalId: `telegram:${update.update_id}`,
-      });
-      await reply(token, chat, 'Added to your to-do list ✅');
-      continue;
-    }
     try {
-      const items = await interpretText(key, text);
+      const items = await interpretText(text);
       let addedTasks = 0;
       let addedActivities = 0;
       items.forEach((item, index) => {
@@ -516,7 +464,7 @@ export async function POST() {
     .onConflictDoUpdate({ target: syncState.key, set: { value: '0' } });
   return Response.json({
     configured: true,
-    aiConfigured: Boolean(key),
+    aiConfigured: workersAiConfigured || Boolean(key),
     imported: taskValues.length,
     activitiesImported: activityValues.length,
     awaitingConfirmation: pending.length > 0,
