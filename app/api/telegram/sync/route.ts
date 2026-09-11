@@ -147,6 +147,39 @@ function parseLine(line: string) {
     end: range[1] || '',
   });
 }
+function naturalActivity(text: string): Pending | null {
+  const range = text.match(
+    /\b(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))\s*(?:-|–|to|until)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i,
+  );
+  if (!range) return null;
+  const lower = text.toLowerCase();
+  let date: string | undefined;
+  let day: string | undefined;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Detroit',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value || '';
+  const today = new Date(`${value('year')}-${value('month')}-${value('day')}T12:00:00-04:00`);
+  if (/\btoday\b/.test(lower)) date = `${value('year')}-${value('month')}-${value('day')}`;
+  else if (/\btomorrow\b/.test(lower)) {
+    today.setDate(today.getDate() + 1);
+    date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  } else {
+    day = Object.keys(weekdays).find((name) => new RegExp(`\\b${name}\\b`, 'i').test(text));
+  }
+  if (!date && !day) return null;
+  const title = text
+    .replace(range[0], '')
+    .replace(/\b(today|tomorrow|next\s+)?(sun(day)?|mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[,.]+$/, '');
+  return normalize({ title, date, day, start: range[1], end: range[2] });
+}
 async function telegram(
   token: string,
   method: string,
@@ -279,11 +312,15 @@ async function interpretText(text: string) {
     ],
     temperature: 0,
     max_tokens: 700,
+    response_format: { type: 'json_object' },
   });
   const output = typeof result === 'string'
     ? result
     : (result as { response?: string }).response || '';
-  const parsed = JSON.parse(output.replace(/^```(?:json)?\s*|```$/g, '').trim()) as { items?: AiTextItem[] };
+  const cleaned = output.replace(/^```(?:json)?\s*|```$/g, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  const parsed = JSON.parse(start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned) as { items?: AiTextItem[] };
   if (!Array.isArray(parsed.items)) throw new Error('Workers AI returned invalid data');
   return parsed.items;
 }
@@ -421,6 +458,18 @@ export async function POST() {
         parts.push(`${addedTasks} to-do${addedTasks === 1 ? '' : 's'}`);
       await reply(token, chat, `Added ${parts.join(' and ')} ✅`);
     } catch {
+      const activity = naturalActivity(text);
+      if (activity) {
+        activityValues.push({
+          title: activity.title,
+          startAt: new Date(activity.startAt),
+          endAt: new Date(activity.endAt),
+          source: 'telegram-parser',
+          externalId: `telegram-parser:${update.update_id}`,
+        });
+        await reply(token, chat, 'Added 1 after-school activity ✅');
+        continue;
+      }
       taskValues.push({
         title: text.slice(0, 500),
         source: 'telegram-fallback',
