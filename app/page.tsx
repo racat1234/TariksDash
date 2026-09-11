@@ -8,7 +8,6 @@ import { DailyGreeting } from '@/components/daily-greeting';
 import { NewsCard } from '@/components/news-card';
 import { ClassSchedule } from '@/components/class-schedule';
 import { WeeklyActivities } from '@/components/weekly-activities';
-import { MusicWidget } from '@/components/music-widget';
 import { MarketsCard } from '@/components/markets-card';
 import { BreakingNewsBanner } from '@/components/breaking-news-banner';
 import { DashboardMaintenance } from '@/components/dashboard-maintenance';
@@ -40,7 +39,6 @@ export default function Home() {
           <div data-dashboard-section="weather"><WeatherCard /></div>
           <div data-dashboard-section="sleep"><SleepCard /></div>
           <div data-dashboard-section="tasks"><TodoList /></div>
-          <MusicWidget />
           <MarketsCard />
           <div data-dashboard-section="news"><NewsCard /></div>
         </div>
