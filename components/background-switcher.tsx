@@ -14,6 +14,7 @@ const sectionOptions = [
   { id: 'greeting', label: 'Greeting', detail: 'Personal welcome message', Icon: MessageCircle },
   { id: 'verse', label: 'Verse of the Day', detail: 'Daily Bible verse', Icon: BookOpen },
   { id: 'schedule', label: 'Class schedule', detail: 'Current class and time left', Icon: CalendarClock },
+  { id: 'activities', label: 'Weekly activities', detail: 'Practice, tutoring, and plans', Icon: CalendarClock },
   { id: 'weather', label: 'Weather', detail: 'Local conditions and forecast', Icon: CloudSun },
   { id: 'sleep', label: 'Sleep', detail: 'Apple Watch sleep total', Icon: MoonStar },
   { id: 'tasks', label: 'Tasks', detail: 'Your personal to-do list', Icon: ListTodo },

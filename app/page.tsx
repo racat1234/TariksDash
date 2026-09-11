@@ -7,6 +7,7 @@ import { SleepCard } from '@/components/sleep-card';
 import { DailyGreeting } from '@/components/daily-greeting';
 import { NewsCard } from '@/components/news-card';
 import { ClassSchedule } from '@/components/class-schedule';
+import { WeeklyActivities } from '@/components/weekly-activities';
 
 export default function Home() {
   return (
@@ -30,6 +31,7 @@ export default function Home() {
 
         <div className="dashboard-grid mx-auto max-w-4xl space-y-6">
           <ClassSchedule />
+          <WeeklyActivities />
           <div data-dashboard-section="weather"><WeatherCard /></div>
           <div data-dashboard-section="sleep"><SleepCard /></div>
           <div data-dashboard-section="tasks"><TodoList /></div>

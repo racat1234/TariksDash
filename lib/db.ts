@@ -13,5 +13,7 @@ export async function ensureDatabase() {
     db.prepare('CREATE TABLE IF NOT EXISTS sync_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)'),
     db.prepare('CREATE TABLE IF NOT EXISTS sleep_records (sleep_date TEXT PRIMARY KEY, start_at INTEGER NOT NULL, end_at INTEGER NOT NULL, total_minutes INTEGER NOT NULL, awake_minutes INTEGER, rem_minutes INTEGER, core_minutes INTEGER, deep_minutes INTEGER, source TEXT NOT NULL DEFAULT \'apple_health\', received_at INTEGER NOT NULL)'),
     db.prepare('CREATE INDEX IF NOT EXISTS idx_sleep_records_end_at ON sleep_records (end_at DESC)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS weekly_activities (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, start_at INTEGER NOT NULL, end_at INTEGER NOT NULL, completed INTEGER NOT NULL DEFAULT 0, source TEXT NOT NULL DEFAULT \'telegram\', external_id TEXT UNIQUE, created_at INTEGER NOT NULL)'),
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_weekly_activities_start_at ON weekly_activities (start_at)'),
   ]);
 }

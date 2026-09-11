@@ -26,3 +26,14 @@ export const sleepRecords = sqliteTable('sleep_records', {
   source: text('source').notNull().default('apple_health'),
   receivedAt: integer('received_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 }, (table) => [index('idx_sleep_records_end_at').on(table.endAt)]);
+
+export const weeklyActivities = sqliteTable('weekly_activities', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  title: text('title').notNull(),
+  startAt: integer('start_at', { mode: 'timestamp' }).notNull(),
+  endAt: integer('end_at', { mode: 'timestamp' }).notNull(),
+  completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+  source: text('source').notNull().default('telegram'),
+  externalId: text('external_id').unique(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+}, (table) => [index('idx_weekly_activities_start_at').on(table.startAt)]);
