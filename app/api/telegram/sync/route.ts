@@ -312,7 +312,6 @@ async function interpretText(text: string) {
     ],
     temperature: 0,
     max_tokens: 700,
-    response_format: { type: 'json_object' },
   });
   const output = typeof result === 'string'
     ? result
