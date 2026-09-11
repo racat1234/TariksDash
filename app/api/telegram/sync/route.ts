@@ -149,8 +149,8 @@ function parseLine(line: string) {
 }
 function naturalActivity(text: string): Pending | null {
   const range = text.match(
-    /\b(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))\s*(?:-|–|to|until)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i,
-  ) || text.match(/\b(?:at|around)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm))\b/i);
+    /\b(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:-|–|to|until)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i,
+  ) || text.match(/\b(?:at|around)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i);
   if (!range) return null;
   const lower = text.toLowerCase();
   let date: string | undefined;
@@ -179,7 +179,12 @@ function naturalActivity(text: string): Pending | null {
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/[,.]+$/, '');
-  return normalize({ title, date, day, start: range[1], end: range[2] || '' });
+  const evening = /\b(tonight|evening|dinner|after[ -]?school)\b/i.test(text);
+  let startTime = range[1].trim();
+  let endTime = range[2]?.trim() || '';
+  if (!/(am|pm)$/i.test(startTime) && evening) startTime += ' PM';
+  if (endTime && !/(am|pm)$/i.test(endTime) && evening) endTime += ' PM';
+  return normalize({ title, date, day, start: startTime, end: endTime });
 }
 async function telegram(
   token: string,
@@ -487,7 +492,7 @@ export async function POST() {
         source: 'telegram-fallback',
         externalId: `telegram-fallback:${update.update_id}`,
       });
-      await reply(token, chat, 'The AI helper is busy, so I safely added this as a to-do instead ✅');
+      await reply(token, chat, 'Added to your to-do list ✅');
     }
   }
   if (taskValues.length)
