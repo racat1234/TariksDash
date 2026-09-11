@@ -149,7 +149,7 @@ function parseLine(line: string) {
 }
 function naturalActivity(text: string): Pending | null {
   const range = text.match(
-    /\b(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:-|–|to|until)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i,
+    /\b(?:from\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:-|–|to|till|until)\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i,
   ) || text.match(/\b(?:at|around)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b/i);
   if (!range) return null;
   const lower = text.toLowerCase();
@@ -171,6 +171,8 @@ function naturalActivity(text: string): Pending | null {
   } else {
     day = Object.keys(weekdays).find((name) => new RegExp(`\\b${name}\\b`, 'i').test(text));
   }
+  if (!date && !day && /\b(i have|practice|football|game|tutoring|appointment|meeting)\b/i.test(text))
+    date = `${value('year')}-${value('month')}-${value('day')}`;
   if (!date && !day) return null;
   const title = text
     .replace(range[0], '')
@@ -179,7 +181,7 @@ function naturalActivity(text: string): Pending | null {
     .replace(/\s+/g, ' ')
     .trim()
     .replace(/[,.]+$/, '');
-  const evening = /\b(tonight|evening|dinner|after[ -]?school)\b/i.test(text);
+  const evening = /\b(tonight|evening|dinner|after[ -]?school|football|practice|game|tutoring)\b/i.test(text);
   let startTime = range[1].trim();
   let endTime = range[2]?.trim() || '';
   if (!/(am|pm)$/i.test(startTime) && evening) startTime += ' PM';
