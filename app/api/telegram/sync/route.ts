@@ -305,7 +305,7 @@ async function interpretText(text: string) {
   const prompt = `You sort Tarik's natural Telegram messages for his personal dashboard. Today in America/Detroit is ${today}. Return each requested item as either "activity" or "todo". An activity is a scheduled after-school/personal event such as practice, tutoring, a game, appointment, meeting, or outing with a date and start time. Homework, chores, reminders, and things to finish are todos. Resolve relative dates such as today, tomorrow, Friday, or next Monday to YYYY-MM-DD. For activities, preserve the start and end times. If no end is stated, leave end blank. If a message sounds like an event but has no usable date or start time, classify it as a todo so it is not lost. Clean up spelling without changing meaning. Message: ${JSON.stringify(text)}. Return JSON only: {"items":[{"kind":"activity","title":"Football practice","date":"2026-09-14","start":"3:15 PM","end":"4:30 PM"},{"kind":"todo","title":"Finish chemistry worksheet","start":""}]}.`;
   const workersAi = (env as unknown as { AI?: { run: (model: string, input: unknown) => Promise<unknown> } }).AI;
   if (!workersAi) throw new Error('Workers AI binding is unavailable');
-  const result = await workersAi.run('@cf/meta/llama-3.1-8b-instruct', {
+  const result = await workersAi.run('@cf/meta/llama-3.1-8b-instruct-fast', {
     messages: [
       { role: 'system', content: 'Return valid JSON only. Do not use markdown fences.' },
       { role: 'user', content: prompt },
